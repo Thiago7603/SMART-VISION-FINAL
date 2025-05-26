@@ -1,13 +1,15 @@
+import { AuthContext } from '@context/AuthContext';
+import axios from 'axios';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { Alert, Modal, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
-import theme from './../../constants/theme';
+import React, { useContext, useEffect, useState } from 'react';
 
+import { Alert, Modal, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import Icon from 'react-native-vector-icons/FontAwesome';
 import FormHeader from './../../components/auth/FormHeader';
 import GradientButton from './../../components/auth/GradientButton';
 import GradientTitle from './../../components/auth/GradientTitle';
+import theme from './../../constants/theme';
 
 
 export default function Register() {
@@ -15,7 +17,7 @@ export default function Register() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
+  const { login } = useContext(AuthContext);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -66,51 +68,54 @@ export default function Register() {
     }
   }, [password, confirmPassword]);
 
-  const OnCreateAccount = async() => {
+  // Reemplaza tu función OnCreateAccount actual con esta:
+const OnCreateAccount = async () => {
+  setEmailError('');
+  setPasswordError('');
+  setConfirmPasswordError('');
 
-    setEmailError('');
-    setPasswordError('');
-    setConfirmPasswordError('');
-
-    if (!fullName || !email || !password || !confirmPassword || !gender) {
-      Alert.alert('Error', 'Por favor, completa todos los campos.');
-      return;
-    }
-
-    if (!validateEmail(email)) {
-      setEmailError('Correo electrónico inválido.');
-      return;
-    }
-
-    if (passwordStrength < 4) {
-      setPasswordError('La contraseña debe tener al menos 8 caracteres, incluyendo una mayúscula, un número y un carácter especial.');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Las contraseñas no coinciden.');
-      return;
-    }
-
-    try {
-      //const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      //const user = userCredential.user;
-
-      // await setDoc(doc(db, 'users', user.uid), {
-      //   fullName,
-      //   username,
-      //   gender,
-      //   email,
-      //   createdAt: new Date(),
-      // });
-
-      //console.log('Usuario creado:', user.uid);
-      router.replace('/(tabs)/Home');
-    } catch (error) {
-      console.error('Error al crear usuario:', error);
-      Alert.alert('Error', error.message);
-    }
+  if (!fullName || !email || !password || !confirmPassword || !gender) {
+    Alert.alert('Error', 'Por favor, completa todos los campos.');
+    return;
   }
+
+  if (!validateEmail(email)) {
+    setEmailError('Correo electrónico inválido.');
+    return;
+  }
+
+  if (passwordStrength < 4) {
+    setPasswordError('La contraseña debe tener al menos 8 caracteres, incluyendo una mayúscula, un número y un carácter especial.');
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    Alert.alert('Error', 'Las contraseñas no coinciden.');
+    return;
+  }
+
+  try {
+    const response = await axios.post('http://10.0.2.2:4000/api/auth/register', {
+      name: fullName,
+      email,
+      password,
+      gender // Necesitarás agregar este campo en tu modelo de usuario
+    });
+
+    // Guardar el token
+    await login(response.data.token, {
+        id: response.data.user.id,
+        email: response.data.user.email,
+        username: response.data.user.username
+      });
+    
+    // Navegar al home
+    router.replace('/(tabs)/Home');
+  } catch (error) {
+    console.error('Error en registro:', error);
+    Alert.alert('Error', error.response?.data?.error || 'Error al registrar usuario');
+  }
+};
 
   const getStrengthColor = () => {
     switch(passwordStrength) {
