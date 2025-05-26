@@ -1,17 +1,20 @@
-import { useRouter } from 'expo-router'
-import React, { useState } from 'react'
-import { Modal, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
-import Icon from 'react-native-vector-icons/FontAwesome'
-import theme from './../../constants/theme'
+import { useRouter } from 'expo-router';
+import React, { useContext, useState } from 'react';
 
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
-import GradientButton from './../../components/auth/GradientButton'
-import GradientText from './../../components/auth/GradientText'
-import GradientTitle from './../../components/auth/GradientTitle'
-import HeroImage from './../../components/auth/HeroImage'
+import { AuthContext } from '@context/AuthContext';
+import axios from 'axios';
+import { Modal, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import GradientButton from './../../components/auth/GradientButton';
+import GradientText from './../../components/auth/GradientText';
+import GradientTitle from './../../components/auth/GradientTitle';
+import HeroImage from './../../components/auth/HeroImage';
+import theme from './../../constants/theme';
 
 export default function Login() {
   const router = useRouter();
+  const { login } = useContext(AuthContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -19,11 +22,33 @@ export default function Login() {
   const [forgotPasswordModal, setForgotPasswordModal] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
 
-  const onSignIn= () => {
-    if (!email || !password) {
-      alert('Por favor, completa todos los campos');
-      return;
-    }
+  const onSignIn = async () => {
+  if (!email || !password) {
+    alert('Por favor, completa todos los campos');
+    return;
+  }
+
+  setError('');
+
+  try {
+    const response = await axios.post('http://10.0.2.2:4000/api/auth/login', {
+      email,
+      password
+    });
+
+    // Guardar el token (usaremos AsyncStorage)
+    await login(response.data.token, {
+        id: response.data.user.id,
+        email: response.data.user.email,
+        username: response.data.user.username
+      });
+    
+    // Navegar al home
+    router.replace('/(tabs)/Home');
+  } catch (error) {
+    console.error('Error en login:', error);
+    setError(error.response?.data?.error || 'Error al iniciar sesión');
+  }
 
     setError('');
 
