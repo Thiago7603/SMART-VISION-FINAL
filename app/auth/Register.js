@@ -95,7 +95,7 @@ const OnCreateAccount = async () => {
   }
 
   try {
-    const response = await axios.post('http://192.168.18.34:4000/api/auth/register', {
+    const response = await axios.post('http://172.20.10.2:4000/api/auth/register', {
       name: fullName,
       email,
       password,
